@@ -1,8 +1,10 @@
-use clap::{Parser, Arg,CommandFactory};
+use clap::{Parser,CommandFactory};
 use std::path::PathBuf;
 use std::io;
 mod r3d;
-use std::fs::{self, DirEntry};
+use std::fs::{self};
+use regex::Regex;
+
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -23,28 +25,38 @@ struct Args {
 
 fn main() {
     let args = Args::parse();
+    let re = Regex::new(r"\d+$").unwrap();
     let mut cmd = Args::command();
     if args.c{
         match args.input_file {
             Some( input) => {
             println!("File {} inputed",input.display());
-            let mut entries = fs::read_dir(input).unwrap()
+            let entries = fs::read_dir(input).unwrap()
             .map(|res| res.map(|e| e.path()))
             .collect::<Result<Vec<_>, io::Error>>().unwrap();
-                
+                let mut reorg  = Vec::new();
                 for a in entries{
                     match a.extension() {
                         Some(b) => {
                             match b.to_str() {
-                                Some("obj") => {println!("{}",a.extension().unwrap().to_str().unwrap())},
+                                Some("obj") => {
+                                    let Some(caps) = re.captures(a.file_stem().unwrap().to_str().unwrap()) else {
+                                        println!("no match!");
+                                        return;
+                                    };
+                                    reorg.push((a.clone(),caps[0].parse::<i32>().unwrap() as i32));
+                                },
                                 _ => {},
-                                
                             }
                         },
                         None => {},
                     }
-                    
                 }
+                reorg.sort_by(|a, b| b.1.cmp(&a.1));
+                reorg.reverse();
+            for c in reorg{
+                println!("{}",c.0.display());
+            }
         },
             None => println!("Can not progress\n No file found for input"),
         }
