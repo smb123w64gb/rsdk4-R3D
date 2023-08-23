@@ -5,7 +5,7 @@ use std::{path::Path, io::Read};
 #[brw(little,import(vert_count: u16))]
 pub struct Frame{
     #[br(count = vert_count)]
-    model:Vec<(f32,f32,f32,f32,f32,f32)>,
+    pub model:Vec<(f32,f32,f32,f32,f32,f32)>,
 }
 
 #[derive(BinRead)]

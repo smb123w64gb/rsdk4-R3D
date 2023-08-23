@@ -1,9 +1,11 @@
 use clap::{Parser,CommandFactory};
+use obj::SimplePolygon;
 use std::path::PathBuf;
 use std::io;
-mod r3d;
-use std::fs::{self};
+mod r3d_r;
+use std::fs;
 use regex::Regex;
+use obj;
 
 
 #[derive(Parser)]
@@ -63,7 +65,40 @@ fn main() {
     }else{
         match args.input_file {
             Some( input) => {
-            println!("File {} inputed",input.display());
+                let mdl = r3d_r::R3DHdr::open(&input);
+                //println!("{}",&input.file_name().unwrap().to_str().unwrap());
+                let mut newpath = input.clone();
+                newpath.set_extension("");
+                fs::create_dir_all(&newpath).unwrap();
+                //println!("VertCount:{}",&mdl.unwrap().vert_count);
+                
+                let mut simp = Vec::new();
+                for i in (mdl.as_ref().unwrap().indices).clone(){
+                    let mut poly = Vec::new();
+                    poly.push(obj::IndexTuple(i.0 as usize,Some(i.0 as usize),Some(i.0 as usize)));
+                    poly.push(obj::IndexTuple(i.1 as usize,Some(i.1 as usize),Some(i.1 as usize)));
+                    poly.push(obj::IndexTuple(i.2 as usize,Some(i.2 as usize),Some(i.2 as usize)));
+                    simp.push(obj::SimplePolygon(poly));
+                }
+                let mut Group = obj::Group::new(("Base").to_string());
+                Group.polys = simp;
+                let object = obj::Object{name:("obj").to_string(),groups:vec![Group]};
+                for (i,frame) in mdl.as_ref().unwrap().frames.iter().enumerate(){
+                    let mut ob = obj::ObjData::default();
+                    ob.objects = vec![object.clone()];
+                    let mut vt = Vec::new();
+                    let mut nm = Vec::new();
+                    for f in frame.model.clone(){
+                        vt.push((f.0,f.3,f.2));
+                        nm.push((f.3,f.4,f.5));
+                    }
+                    ob.position = vt;
+                    ob.texture = mdl.as_ref().unwrap().uv.clone();
+                    ob.normal = nm;
+                    
+                    let objOut = obj::Obj{data:ob,path:};
+
+                }
         },
             None => cmd.print_help().unwrap(),
         }
