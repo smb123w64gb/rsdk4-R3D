@@ -1,12 +1,11 @@
 use clap::{Parser,CommandFactory};
-use obj::SimplePolygon;
 use std::path::{Path,PathBuf};
 
 use std::io;
-mod r3d_r;
+mod r3d;
 use std::fs;
 use regex::Regex;
-use obj;
+use obj::{self, Obj};
 
 
 #[derive(Parser)]
@@ -56,7 +55,25 @@ fn main() {
                     }
                 }
                 reorg.sort_by(|a, b| b.1.cmp(&a.1));
+                let first = reorg.pop();
+                //let mut basePoly = Vec::new();
                 reorg.reverse();
+                match first {
+                    Some(ittm) => {
+                        let mut fobj = Obj::load(ittm.0).unwrap();
+                        let objone = fobj.data.objects.pop().unwrap().groups.pop().unwrap().polys;
+                        for polypoly in objone{
+                            for poly in polypoly.0{
+                            println!("{}",poly);
+                            }
+                        }
+                        
+                        
+                        //println!("{}",ittm.0.display())
+                    },
+                    None => {}
+                }
+
             for c in reorg{
                 println!("{}",c.0.display());
             }
@@ -66,7 +83,7 @@ fn main() {
     }else{
         match args.input_file {
             Some( input) => {
-                let mdl = r3d_r::R3DHdr::open(&input);
+                let mdl = r3d::R3DHdr::open(&input);
                 //println!("{}",&input.file_name().unwrap().to_str().unwrap());
                 let mut newpath = input.clone();
                 newpath.set_extension("");

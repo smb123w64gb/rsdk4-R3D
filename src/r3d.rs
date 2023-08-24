@@ -1,14 +1,15 @@
 
-use binrw::{BinRead, io::BufReader, BinResult, BinReaderExt};
-use std::{path::Path, io::Read};
-#[derive(BinRead)]
-#[brw(little,import(vert_count: u16))]
+use binrw::{BinRead, BinResult, io::{BufReader}, BinReaderExt, BinWrite};
+use std::io::BufWriter;
+use std::path::Path;
+#[derive(BinRead,BinWrite)]
+#[br(little,import(vert_count: u16))]
 pub struct Frame{
     #[br(count = vert_count)]
     pub model:Vec<(f32,f32,f32,f32,f32,f32)>,
 }
 
-#[derive(BinRead)]
+#[derive(BinRead,BinWrite)]
 #[brw(little, magic = b"R3D\x00")]
 pub struct R3DHdr {
     pub vert_count:u16,
@@ -26,5 +27,8 @@ pub struct R3DHdr {
 impl R3DHdr{
     pub fn open<P: AsRef<Path>>(path: P) -> BinResult<Self> {
         BufReader::new(std::fs::File::open(path)?).read_le()
+    }
+    pub fn write<P: AsRef<Path>>(&mut self,path: P) {
+        self.write_le(&mut BufWriter::new(std::fs::File::open(path).unwrap())).unwrap();
     }
 }
