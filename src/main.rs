@@ -85,6 +85,7 @@ fn main() {
                 Group.polys = simp;
                 let object = obj::Object{name:("obj").to_string(),groups:vec![Group]};
                 for (i,frame) in mdl.as_ref().unwrap().frames.iter().enumerate(){
+                    let mut pp = newpath.clone();
                     let mut ob = obj::ObjData::default();
                     ob.objects = vec![object.clone()];
                     let mut vt = Vec::new();
@@ -92,17 +93,19 @@ fn main() {
                     let mut uv = Vec::new();
                     let uuvv = mdl.as_ref().unwrap().uv.clone();
                     for (ii,f) in frame.model.clone().iter().enumerate(){
-                        vt.push([f.0,f.3,f.2]);
-                        uv.push([uuvv[ii].0,uuvv[ii].1]);
+                        vt.push([f.0*-1.0,f.1,f.2]);
+                        uv.push([uuvv[ii].0,(uuvv[ii].1*-1.0)+1.0]);
                         nm.push([f.3,f.4,f.5]);
                     }
                     ob.position = vt;
                     ob.texture = uv;
                     ob.normal = nm;
-                    let mut p = Path::new(&i.to_string().clone());
-                    p.push(
-                        ".obj");
-                    //let objOut = obj::Obj{data:ob,path:};
+                    pp.push(Path::new(format!("base{}.obj",i).as_str()));
+                    println!("Frame {} out",i);
+                    //let npp = 
+                    //p.push(".obj");
+                    let objOut = obj::Obj{data:ob,path:pp.clone()};
+                    objOut.save(pp.clone()).unwrap();
 
                 }
         },
