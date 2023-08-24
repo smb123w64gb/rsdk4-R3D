@@ -1,6 +1,7 @@
 use clap::{Parser,CommandFactory};
 use obj::SimplePolygon;
-use std::path::PathBuf;
+use std::path::{Path,PathBuf};
+
 use std::io;
 mod r3d_r;
 use std::fs;
@@ -88,15 +89,20 @@ fn main() {
                     ob.objects = vec![object.clone()];
                     let mut vt = Vec::new();
                     let mut nm = Vec::new();
-                    for f in frame.model.clone(){
-                        vt.push((f.0,f.3,f.2));
-                        nm.push((f.3,f.4,f.5));
+                    let mut uv = Vec::new();
+                    let uuvv = mdl.as_ref().unwrap().uv.clone();
+                    for (ii,f) in frame.model.clone().iter().enumerate(){
+                        vt.push([f.0,f.3,f.2]);
+                        uv.push([uuvv[ii].0,uuvv[ii].1]);
+                        nm.push([f.3,f.4,f.5]);
                     }
                     ob.position = vt;
-                    ob.texture = mdl.as_ref().unwrap().uv.clone();
+                    ob.texture = uv;
                     ob.normal = nm;
-                    
-                    let objOut = obj::Obj{data:ob,path:};
+                    let mut p = Path::new(&i.to_string().clone());
+                    p.push(
+                        ".obj");
+                    //let objOut = obj::Obj{data:ob,path:};
 
                 }
         },
