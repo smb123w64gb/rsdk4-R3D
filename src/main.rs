@@ -6,7 +6,7 @@ mod r3d;
 use std::fs;
 use regex::Regex;
 use obj::{self, Obj};
-
+mod translate;
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -55,76 +55,25 @@ fn main() {
                     }
                 }
                 reorg.sort_by(|a, b| b.1.cmp(&a.1));
-                let first = reorg.pop();
-                //let mut basePoly = Vec::new();
                 reorg.reverse();
-                match first {
-                    Some(ittm) => {
-                        let mut fobj = Obj::load(ittm.0).unwrap();
-                        let objone = fobj.data.objects.pop().unwrap().groups.pop().unwrap().polys;
-                        for polypoly in objone{
-                            for poly in polypoly.0{
-                            println!("{}",poly);
-                            }
-                        }
-                        
-                        
-                        //println!("{}",ittm.0.display())
-                    },
-                    None => {}
-                }
-
+                let mut objs_in = Vec::new();
+                let mut base:PathBuf = PathBuf::new();
             for c in reorg{
-                println!("{}",c.0.display());
+                objs_in.push(obj::Obj::load(c.0.clone()).unwrap());
+                base = c.0.clone();
             }
+            base.pop();
+            base.set_extension("bin");
+            translate::obj_2_r3d(objs_in.clone(), base);
+
+
         },
             None => println!("Can not progress\n No file found for input"),
         }
     }else{
         match args.input_file {
             Some( input) => {
-                let mdl = r3d::R3DHdr::open(&input);
-                //println!("{}",&input.file_name().unwrap().to_str().unwrap());
-                let mut newpath = input.clone();
-                newpath.set_extension("");
-                fs::create_dir_all(&newpath).unwrap();
-                //println!("VertCount:{}",&mdl.unwrap().vert_count);
-                
-                let mut simp = Vec::new();
-                for i in (mdl.as_ref().unwrap().indices).clone(){
-                    let mut poly = Vec::new();
-                    poly.push(obj::IndexTuple(i.0 as usize,Some(i.0 as usize),Some(i.0 as usize)));
-                    poly.push(obj::IndexTuple(i.1 as usize,Some(i.1 as usize),Some(i.1 as usize)));
-                    poly.push(obj::IndexTuple(i.2 as usize,Some(i.2 as usize),Some(i.2 as usize)));
-                    simp.push(obj::SimplePolygon(poly));
-                }
-                let mut Group = obj::Group::new(("Base").to_string());
-                Group.polys = simp;
-                let object = obj::Object{name:("obj").to_string(),groups:vec![Group]};
-                for (i,frame) in mdl.as_ref().unwrap().frames.iter().enumerate(){
-                    let mut pp = newpath.clone();
-                    let mut ob = obj::ObjData::default();
-                    ob.objects = vec![object.clone()];
-                    let mut vt = Vec::new();
-                    let mut nm = Vec::new();
-                    let mut uv = Vec::new();
-                    let uuvv = mdl.as_ref().unwrap().uv.clone();
-                    for (ii,f) in frame.model.clone().iter().enumerate(){
-                        vt.push([f.0*-1.0,f.1,f.2]);
-                        uv.push([uuvv[ii].0,(uuvv[ii].1*-1.0)+1.0]);
-                        nm.push([f.3,f.4,f.5]);
-                    }
-                    ob.position = vt;
-                    ob.texture = uv;
-                    ob.normal = nm;
-                    pp.push(Path::new(format!("base{}.obj",i).as_str()));
-                    println!("Frame {} out",i);
-                    //let npp = 
-                    //p.push(".obj");
-                    let objOut = obj::Obj{data:ob,path:pp.clone()};
-                    objOut.save(pp.clone()).unwrap();
-
-                }
+                translate::r3d_2_obj(input.clone(),input.clone());
         },
             None => cmd.print_help().unwrap(),
         }
